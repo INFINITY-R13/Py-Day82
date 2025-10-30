@@ -1,4 +1,7 @@
-# Morse Code Dictionary
+import tkinter as tk
+from tkinter import messagebox
+
+# --- Morse Code Dictionary ---
 MORSE_CODE_DICT = {
     'A': '.-', 'B': '-...', 'C': '-.-.', 'D': '-..', 'E': '.',
     'F': '..-.', 'G': '--.', 'H': '....', 'I': '..', 'J': '.---',
@@ -14,76 +17,188 @@ MORSE_CODE_DICT = {
     '"': '.-..-.', '$': '...-..-', "'": '.----.'
 }
 
+# --- Core Conversion Logic ---
 def text_to_morse(message):
     """
     Converts a text string into its Morse code equivalent.
-    
-    Args:
-        message (str): The text string to be converted.
-
-    Returns:
-        str: The Morse code representation of the input string.
-              Letters are separated by a single space.
-              Words are separated by ' / '.
-              Unsupported characters are skipped.
     """
     morse_code = ""
-    # Convert the message to uppercase as Morse code is case-insensitive
     for char in message.upper():
         if char == ' ':
-            # Add a word separator
-            # We add a space before and after '/' to distinguish it from letter spaces
             morse_code += " / "
         elif char in MORSE_CODE_DICT:
-            # Add the Morse code for the character, followed by a space
             morse_code += MORSE_CODE_DICT[char] + " "
         else:
-            # You can choose to handle unsupported characters differently,
-            # e.g., morse_code += '? '
-            # For this version, we'll just skip them.
+            # Keep unsupported characters as they are (or skip them)
+            # Let's skip them for a cleaner Morse output
             pass
             
-    # .strip() removes any trailing space from the end
     return morse_code.strip()
 
-def main():
+# --- GUI Functions ---
+
+def handle_conversion():
     """
-    Main function to run the Morse Code Converter program.
+    Gets text from the input box, converts it, and displays it in the output box.
     """
-    print("--- Text to Morse Code Converter ---")
-    print("Enter your message, and I will convert it to Morse code.")
-    print("Words are separated by ' / ' and letters by a single space.")
-    print("--------------------------------------\n")
+    # Get text from the input Text widget
+    # "1.0" means from the beginning (line 1, char 0)
+    # "end-1c" means to the end, minus the 1 trailing newline char
+    user_input = input_text.get("1.0", "end-1c")
+    
+    if not user_input:
+        messagebox.showinfo("Empty Input", "Please enter some text to convert.")
+        return
 
-    is_running = True
-    while is_running:
-        # Get user input
-        user_input = input("Enter your message: ")
-        
-        if not user_input:
-            print("You didn't enter anything. Please try again.")
-            continue
-            
-        # Perform the conversion
-        converted_message = text_to_morse(user_input)
-        
-        # Display the result
-        print(f"\nYour message: {user_input}")
-        print(f"Morse Code:   {converted_message}\n")
-        
-        # Ask to continue
-        while True:
-            choice = input("Would you like to convert another message? (yes/no): ").strip().lower()
-            if choice == 'no' or choice == 'n':
-                is_running = False
-                break
-            elif choice == 'yes' or choice == 'y':
-                break
-            else:
-                print("Invalid input. Please enter 'yes' or 'no'.")
+    # Perform the conversion
+    converted_message = text_to_morse(user_input)
+    
+    # Update the output Text widget
+    # 1. Set state to normal to allow editing
+    output_text.config(state="normal")
+    # 2. Delete any previous content
+    output_text.delete("1.0", "end")
+    # 3. Insert the new converted message
+    output_text.insert("1.0", converted_message)
+    # 4. Set state back to disabled to make it read-only
+    output_text.config(state="disabled")
 
-    print("\nThank you for using the Morse Code Converter. Goodbye!")
+def copy_to_clipboard():
+    """
+    Copies the content of the output box to the clipboard.
+    """
+    # Get the text from the output box
+    morse_result = output_text.get("1.0", "end-1c")
+    if morse_result:
+        # Clear the clipboard first
+        window.clipboard_clear()
+        # Append the new text
+        window.clipboard_append(morse_result)
+        # Show a confirmation
+        messagebox.showinfo("Copied!", "Morse code copied to clipboard.")
+    else:
+        messagebox.showwarning("Empty Output", "There is no Morse code to copy.")
 
-# Run the main program
-if __name__ == "__main__":
-    main()
+def clear_fields():
+    """
+    Clears both the input and output text boxes.
+    """
+    # Clear the input box
+    input_text.delete("1.0", "end")
+    
+    # Clear the output box
+    output_text.config(state="normal")
+    output_text.delete("1.0", "end")
+    output_text.config(state="disabled")
+
+# --- Set up the main window ---
+window = tk.Tk()
+window.title("Text-to-Morse Code Converter")
+window.geometry("450x400") # Set a reasonable size
+window.config(padx=20, pady=20, bg="#f0f0f0") # Add padding and background color
+
+# --- Create and place widgets ---
+
+# 1. Title Label
+title_label = tk.Label(
+    text="Text to Morse Code", 
+    font=("Arial", 18, "bold"), 
+    bg="#f0f0f0"
+)
+title_label.pack(pady=(0, 15))
+
+# 2. Input Label
+input_label = tk.Label(
+    text="Enter Text:", 
+    font=("Arial", 12), 
+    bg="#f0f0f0"
+)
+input_label.pack(anchor="w") # Anchor to the west (left)
+
+# 3. Input Text Box
+input_text = tk.Text(
+    window, 
+    height=5, 
+    width=50, 
+    font=("Arial", 11),
+    borderwidth=2,
+    relief="sunken",
+    padx=5,
+    pady=5
+)
+input_text.pack(pady=5)
+
+# 4. Button Frame (to hold the buttons side-by-side)
+button_frame = tk.Frame(window, bg="#f0f0f0")
+button_frame.pack(pady=10)
+
+# 5. Convert Button
+convert_button = tk.Button(
+    button_frame, 
+    text="Convert to Morse", 
+    font=("Arial", 10, "bold"),
+    command=handle_conversion,
+    bg="#4CAF50", # Green
+    fg="white",
+    padx=10,
+    pady=5,
+    relief="raised",
+    borderwidth=2
+)
+convert_button.pack(side="left", padx=5)
+
+# 6. Copy Button
+copy_button = tk.Button(
+    button_frame, 
+    text="Copy Result", 
+    font=("Arial", 10),
+    command=copy_to_clipboard,
+    bg="#008CBA", # Blue
+    fg="white",
+    padx=10,
+    pady=5,
+    relief="raised",
+    borderwidth=2
+)
+copy_button.pack(side="left", padx=5)
+
+# 7. Clear Button
+clear_button = tk.Button(
+    button_frame, 
+    text="Clear All", 
+    font=("Arial", 10),
+    command=clear_fields,
+    bg="#f44336", # Red
+    fg="white",
+    padx=10,
+    pady=5,
+    relief="raised",
+    borderwidth=2
+)
+clear_button.pack(side="left", padx=5)
+
+
+# 8. Output Label
+output_label = tk.Label(
+    text="Morse Code Result:", 
+    font=("Arial", 12), 
+    bg="#f0f0f0"
+)
+output_label.pack(anchor="w", pady=(10, 0))
+
+# 9. Output Text Box (read-only)
+output_text = tk.Text(
+    window, 
+    height=5, 
+    width=50, 
+    font=("Arial", 11),
+    borderwidth=2,
+    relief="sunken",
+    padx=5,
+    pady=5,
+    state="disabled" # Start as read-only
+)
+output_text.pack(pady=5)
+
+# --- Start the main event loop ---
+window.mainloop()
